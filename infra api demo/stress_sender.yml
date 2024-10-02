@@ -1,0 +1,9 @@
+- hosts: servers
+  become: true
+  tasks:
+    - name: Copy stressor
+      copy:
+        src: /home/casper/randomStressor.sh
+        dest: /home/ubuntu/randomStressor.sh
+        mode: 0755
+
