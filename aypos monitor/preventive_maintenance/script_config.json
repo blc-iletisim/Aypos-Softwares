@@ -1,0 +1,28 @@
+{
+  "initial_rows_type": {
+    "1": "C:\\Users\\B_L_C\\Desktop\\aypos_monitor\\preventive_maintenance\\initial_rows1.csv",
+    "5": "C:\\Users\\B_L_C\\Desktop\\aypos_monitor\\preventive_maintenance\\initial_rows1.csv"
+  },
+  "scaler_type": {
+    "1": "C:\\Users\\B_L_C\\Desktop\\aypos_monitor\\preventive_maintenance\\ts_scaler_1min.pkl",
+    "5": "C:\\Users\\B_L_C\\Desktop\\aypos_monitor\\preventive_maintenance\\ts_scaler_5min.pkl"
+  },
+  "ip_addresses": {
+    "get_ip_addresses": {
+      "snmp_ip_address": "http://10.150.1.167:8003/prom/snmp/min"
+    },
+    "post_ip_addresses": {
+      "horizon_ip_address": "http://10.150.1.167:8003/prom/push/maintenance_data"
+    }
+  },
+  "models": {
+    "1": {
+      "lstm": "C:\\Users\\B_L_C\\Desktop\\aypos_monitor\\preventive_maintenance\\lstm_1min_model.h5",
+      "transfer_learning": "C:\\Users\\B_L_C\\Desktop\\aypos_monitor\\preventive_maintenance\\nbeats_1min_model.pth"
+    },
+    "5": {
+      "lstm": "C:\\Users\\B_L_C\\Desktop\\aypos_monitor\\preventive_maintenance\\lstm_5min_model.h5",
+      "transfer_learning": "C:\\Users\\B_L_C\\Desktop\\aypos_monitor\\preventive_maintenance\\snbeats_5min_model.pth"
+    }
+  }
+}
