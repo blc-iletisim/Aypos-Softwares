@@ -1,5 +1,5 @@
 *steps*
-1 - Install prometheus using links . . 
+1 - Install prometheus using links . .  </br>
 2 - Install node exporters on observed vms and pms.
 3 - Install PDU device.
 4 - Configure PDU data to Prometheus TSDB.
