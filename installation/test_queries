@@ -1,0 +1,8 @@
+prometheus test queries:
+
+http://localhost:9090/api/v1/query_range?query={query}&start={start}&end={end}&step=3m
+
+http://localhost:9090/api/v1/query?query={query}
+
+query maybe node_load1...
+check localhost:9090
