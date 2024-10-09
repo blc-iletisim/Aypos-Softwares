@@ -9,6 +9,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 
+# ndoe exporter last n minute handle
 def handle_aver_last_min(server, last10=True, nmin=10, go_hour_back=None):
     
     now = datetime.now()
@@ -126,6 +127,7 @@ def handle_aver_last_min(server, last10=True, nmin=10, go_hour_back=None):
             return handleit(start, now, step, step_func, server)
 
 
+# pdu data must be configured to be sent to prometheus tsdb
 def get_actual_snmps_nmin(n):
 
     end_1 = datetime.now()
@@ -135,6 +137,7 @@ def get_actual_snmps_nmin(n):
     data_len = len(req['data']['result'])
 
     for i in range(data_len):
+        # order computes
         compute_order[req['data']['result'][i]['metric']['compute_id']] = i
 
     start_1 = end_1 - timedelta(minutes=10)
@@ -286,6 +289,7 @@ def get_name_snmp():
     return a
 
 
+# hadnle Prometheus saved pdu data 
 def scraper_dict_cr():
     power_data_js, energy_data_js, current_data_js, voltage_data_js, pf_data_js = get_all_pdu_metrics()
 
@@ -357,6 +361,7 @@ def get_ips():
 
 
 def handle_auto_ip(serv_num):
+    # one random promql to get instances and return their private ips
     data_js = rq.get("http://10.150.1.167:9090/api/v1/query?query=node_load1").json()
     
     ct = 0
@@ -373,7 +378,7 @@ def handle_auto_ip(serv_num):
             
         ct += 1
         
-    
+
 def return_cur(server):
 
     ifserv = False
@@ -431,6 +436,8 @@ def return_cur(server):
 import subprocess
 
 
+# ! return n day node exporter data together with pdu data but old version 
+# ! new version upcoming now file saved pdu data
 def organize_data(day):
      
     setting_file = open("/home/ubuntu/data_collector/prometheus-api-get-metric-data-main/src/settings.py", "w")
