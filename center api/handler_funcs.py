@@ -7,14 +7,15 @@ from settings import *
 from datetime import datetime
 from datetime import timedelta
 from decimal import Decimal
+from env import *
 
+from env import *
 
-# ndoe exporter last n minute handle
 def handle_aver_last_min(server, last10=True, nmin=10, go_hour_back=None):
-    
+
     now = datetime.now()
     start = now - timedelta(minutes=nmin) # datetime.timedelta(minutes=nmin)
-    
+
     def handleit(start, end, step, step_func, server):
 
         df_nodes = pd.read_csv("nodes2.csv")
@@ -39,7 +40,7 @@ def handle_aver_last_min(server, last10=True, nmin=10, go_hour_back=None):
 
             # organize url(request) to prevent clutter
             url = organize_url(url, start, end, step)
-            
+
             # get data using requests modul
             metric_data_node = rq.get(url).json()
 
@@ -50,26 +51,26 @@ def handle_aver_last_min(server, last10=True, nmin=10, go_hour_back=None):
             except:
                 print("Potential time error. Please check if start and end times relevant.")
                 continue
-            
+
             # load metric data into a numpy array
             metric_data_node = np.array(metric_data_node['data']['result'][0]['values'])
-            
+
             # print(metric_data_node[:,1].reshape(-1).shape)
             # print(metric_data_node)
             metric_data_node = metric_data_node[:,1].reshape(-1)
             metric_data_node = metric_data_node.astype(float)
-            
+
             print(type(np.mean(metric_data_node).round(4)))
             meann = np.mean(metric_data_node).round(4)
             json_h[query_name] = float(meann)
             # np.mean(metric_data_node).round(4) # np.mean(metric_data_node).round(4) # metric_data_node.mean()
-        
+
         print(json_h)
         return json_h
 
     if last10:
 
-        
+
         now = datetime.now()
         start = now - timedelta(minutes=10) # datetime.timedelta(minutes=10)
 
@@ -93,7 +94,7 @@ def handle_aver_last_min(server, last10=True, nmin=10, go_hour_back=None):
         oncer = True
 
         if go_hour_back:
-            
+
             now = datetime.now()
 
             for i in range(go_hour_back):
@@ -123,21 +124,19 @@ def handle_aver_last_min(server, last10=True, nmin=10, go_hour_back=None):
             start = now - timedelta(minutes=nmin)
             start = start.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
             now = now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-        
+
             return handleit(start, now, step, step_func, server)
 
 
-# pdu data must be configured to be sent to prometheus tsdb
 def get_actual_snmps_nmin(n):
 
     end_1 = datetime.now()
 
-    req = rq.get('http://10.150.1.167:9090/api/v1/query?query=pdu_power').json()
+    req = rq.get(f'{prometheus_domain}/api/v1/query?query=pdu_power').json()
     compute_order = {}
     data_len = len(req['data']['result'])
 
     for i in range(data_len):
-        # order computes
         compute_order[req['data']['result'][i]['metric']['compute_id']] = i
 
     start_1 = end_1 - timedelta(minutes=10)
@@ -163,17 +162,17 @@ def get_actual_snmps_nmin(n):
         # data_arr = data_arr.astype(float)
 
             if elem == 'time_stamp':
-                query = f"http://10.150.1.167:9090/api/v1/query_range?query=pdu_pf&start={start}&end={end}&step=1s"
+                query = f"{prometheus_domain}/api/v1/query_range?query=pdu_pf&start={start}&end={end}&step=1s"
                 data = rq.get(query).json()
                 time_data = [i[0] for i in data['data']['result'][compute_order[i]]['values']]
             else:
-                query = f"http://10.150.1.167:9090/api/v1/query_range?query={elem}&start={start}&end={end}&step=1s"
+                query = f"{prometheus_domain}/api/v1/query_range?query={elem}&start={start}&end={end}&step=1s"
                 data = rq.get(query).json()
                 data_arr = [float(i[1]) for i in data['data']['result'][compute_order[i]]['values']]
                 aver = sum(data_arr) / len(data_arr)
 
                 data_d[elem] = aver
-        
+
         emp[i] = data_d
 
     return emp
@@ -182,14 +181,14 @@ def get_actual_snmps_nmin(n):
 def get_snmps_nmin(n, time_unit='m', compute_name='compute3'):
 
     end = datetime.now()
-    
-    req = rq.get('http://10.150.1.167:9090/api/v1/query?query=pdu_power').json()
+
+    req = rq.get('{prometheus_domain}/api/v1/query?query=pdu_power').json()
     compute_order = {}
     data_len = len(req['data']['result'])
 
     for i in range(data_len):
         compute_order[req['data']['result'][i]['metric']['compute_id']] = i
-        
+
     if time_unit == 'm':
 
         start = end - timedelta(minutes=n)
@@ -204,7 +203,7 @@ def get_snmps_nmin(n, time_unit='m', compute_name='compute3'):
         # start - end relative data
 
         divisions = [[end-timedelta(hours=2*i+2), end-timedelta(hours=(2*i))] for i in range(n // 2)]
-        
+
         if isOdd:
             i = n // 2
             al =  [end-timedelta(hours=2*i+1), end-timedelta(hours=(2*i))]
@@ -213,58 +212,58 @@ def get_snmps_nmin(n, time_unit='m', compute_name='compute3'):
 
     if time_unit == 'd':
         start = end - timedelta(hours=24*n)
-        
+
         # for 5: 0 2 2 4 4 5
         # start - end relative data
 
         divisions = [[end-timedelta(hours=2*i+2), end-timedelta(hours=(2*i))] for i in range(n*12)]
-    
+
     print(divisions)
     once = True
 
     for subdiv in divisions:
-        
+
         start = subdiv[0]
         end = subdiv[1]
 
         start = start.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
         end = end.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-    
+
         pdu_list = ['pdu_power', 'pdu_energy', 'pdu_current', 'pdu_voltage', 'pdu_pf', 'time_stamp']
         data_d = {}
-    
-        # once = True
-        now = datetime.now() 
 
-        
+        # once = True
+        now = datetime.now()
+
+
         for elem in pdu_list:
 
         # data_arr = np.array(data['data']['result'][0]['values'])
-        
+
         # data_arr = data_arr[:,1].reshape(-1)
         # data_arr = data_arr.astype(float)
-        
+
             if elem == 'time_stamp':
-                query = f"http://10.150.1.167:9090/api/v1/query_range?query=pdu_pf&start={start}&end={end}&step=1s"
+                query = f"{prometheus_domain}/api/v1/query_range?query=pdu_pf&start={start}&end={end}&step=1s"
                 data = rq.get(query).json()
                 time_data = [i[0] for i in data['data']['result'][compute_order[compute_name]]['values']]
                 data_d[elem] = time_data
             else:
-                query = f"http://10.150.1.167:9090/api/v1/query_range?query={elem}&start={start}&end={end}&step=1s"
+                query = f"{prometheus_domain}/api/v1/query_range?query={elem}&start={start}&end={end}&step=1s"
                 data = rq.get(query).json()
                 data_arr = [i[1] for i in data['data']['result'][compute_order[compute_name]]['values']]
                 data_d[elem] = data_arr
-        
+
         if once:
 
             hold_df = pd.DataFrame(data=data_d, columns=pdu_list)
             once = False
-        
+
         else:
             print('else')
             df = pd.DataFrame(data=data_d, columns=pdu_list)
             hold_df = pd.concat((hold_df, df), axis=0, ignore_index=True)
-    
+
     def time_changer2(time):
         return datetime.fromtimestamp(time)
 
@@ -277,19 +276,18 @@ def get_snmps_nmin(n, time_unit='m', compute_name='compute3'):
 
 
 def get_snmps():
-    
-    data_js = rq.get("http://10.150.1.167:9090/api/v1/query?query=pdu_power").json()
+
+    data_js = rq.get(f"{prometheus_domain}/api/v1/query?query=pdu_power").json()
     return data_js
 
 
 def get_name_snmp():
     a = {i['metric']['compute_id']:i['value'][1] for i in get_snmps()['data']['result']}
 
-    # data_js = rq.get("http://10.150.1.167:9090/api/v1/query?query=pdu_power").json()
+    # data_js = rq.get("http://10.50.1.167:9090/api/v1/query?query=pdu_power").json()
     return a
 
 
-# hadnle Prometheus saved pdu data 
 def scraper_dict_cr():
     power_data_js, energy_data_js, current_data_js, voltage_data_js, pf_data_js = get_all_pdu_metrics()
 
@@ -298,7 +296,7 @@ def scraper_dict_cr():
     current = {i['metric']['compute_id']:i['value'][1] for i in current_data_js['data']['result']}
     pf = {i['metric']['compute_id']:i['value'][1] for i in pf_data_js['data']['result']}
     energy = {i['metric']['compute_id']:i['value'][1] for i in energy_data_js['data']['result']}
-    
+
     empty = {"data": []}
 
     for i in power:
@@ -321,26 +319,26 @@ def scraper_dict_cr():
 
 def get_all_pdu_metrics():
 
-    power_data_js = rq.get("http://10.150.1.167:9090/api/v1/query?query=pdu_power").json()
-    
-    energy_data_js = rq.get("http://10.150.1.167:9090/api/v1/query?query=pdu_energy").json()
-    current_data_js = rq.get("http://10.150.1.167:9090/api/v1/query?query=pdu_current").json()
-    voltage_data_js = rq.get("http://10.150.1.167:9090/api/v1/query?query=pdu_voltage").json()
-    pf_data_js = rq.get("http://10.150.1.167:9090/api/v1/query?query=pdu_pf").json()
+    power_data_js = rq.get(f"{prometheus_domain}/api/v1/query?query=pdu_power").json()
+
+    energy_data_js = rq.get(f"{prometheus_domain}/api/v1/query?query=pdu_energy").json()
+    current_data_js = rq.get(f"{prometheus_domain}/api/v1/query?query=pdu_current").json()
+    voltage_data_js = rq.get(f"{prometheus_domain}/api/v1/query?query=pdu_voltage").json()
+    pf_data_js = rq.get(f"{prometheus_domain}/api/v1/query?query=pdu_pf").json()
 
     return power_data_js, energy_data_js, current_data_js, voltage_data_js, pf_data_js
 
 
 def get_ips():
-    
-    data_js = rq.get("http://10.150.1.167:9090/api/v1/query?query=node_load1").json()
-    node_json = rq.get("http://10.150.1.167:9090/api/v1/query?query=node_uname_info").json()
-    
+
+    data_js = rq.get(f"{prometheus_domain}/api/v1/query?query=node_load1").json()
+    node_json = rq.get(f"{prometheus_domain}/api/v1/query?query=node_uname_info").json()
+
     # node_names = [x['nodename'] for x in node_json['data']['result']]
-    
+
     serv_dict = {}
     ct = 0
-    
+
     for nodename in node_json['data']['result']:
         nodename = nodename['metric']["instance"].split(':')[0]
         serv_dict[nodename] = ct
@@ -361,9 +359,8 @@ def get_ips():
 
 
 def handle_auto_ip(serv_num):
-    # one random promql to get instances and return their private ips
-    data_js = rq.get("http://10.150.1.167:9090/api/v1/query?query=node_load1").json()
-    
+    data_js = rq.get(f"{prometheus_domain}/api/v1/query?query=node_load1").json()
+
     ct = 0
 
     for data in data_js['data']['result']:
@@ -371,13 +368,13 @@ def handle_auto_ip(serv_num):
         dotsp = inst.split('.')
         dotsp = dotsp[len(dotsp)-1]
         dotsp = dotsp.split(":")[0]
-        
+
         if serv_num == int(dotsp):
             print("---------------------------------------------------")
             return ct
-            
+
         ct += 1
-        
+
 
 def return_cur(server):
 
@@ -385,7 +382,7 @@ def return_cur(server):
 
     if server or server == 0:
         ifserv = True
-    
+
     else:
         server = 0
 
@@ -397,12 +394,12 @@ def return_cur(server):
         # get queries and their names
         query_name = col["query_name"]
         query = col["query"]
-        
+
         instance = f'{return_instance("node", st_num=server)}'
         url = curly_organizer(query, instance, step_func)
 
         # apply server
-        url = f'http://localhost:9090/api/v1/query?query={url}'
+        url = f'{prometheus_domain}/api/v1/query?query={url}'
 
         metric_data_node = rq.get(url).json()
         print(metric_data_node)
@@ -420,9 +417,9 @@ def return_cur(server):
 
         metric_data_node = metric_data_node[1].reshape(-1)
         metric_data_node = metric_data_node.astype(float)
-        
+
         data[query_name] = float(metric_data_node.round(4))
-    
+
     if ifserv:
         return data
 
@@ -430,16 +427,14 @@ def return_cur(server):
 
         for key in data.keys():
             data[key] = 0
-        
+
         return data
 
 import subprocess
 
 
-# ! return n day node exporter data together with pdu data but old version 
-# ! new version upcoming now file saved pdu data
 def organize_data(day):
-     
+
     setting_file = open("/home/ubuntu/data_collector/prometheus-api-get-metric-data-main/src/settings.py", "w")
     setting_file.write(f"day = {day}\nhour = 0\nminute = 0\nsecond_in = 0\nstep = '2s'\nstep_func = '30s'\ndecimal_limit = 3\nlog = []")
     setting_file.close()
@@ -466,7 +461,7 @@ def organize_data(day):
         for letters in files:
             if ct >leng-1:
                 break
-            
+
             hold_file += letters
             ct += 1
 
@@ -479,7 +474,7 @@ def organize_data(day):
             snmp.append(files)
 
     sns_times = []
-    
+
     snmp_order_time = []
 
     for sns in snmp:
@@ -497,14 +492,14 @@ def organize_data(day):
 
             else:
                 holl += letters
-    
+
         # 1 2 are months and 4 5 are days, 7 8 are hour 10 11 are minutes 13 14 are seconds
         time = holl
         sns_times.append(time)
         #print(time)
-    
+
         snmp_order_time.append(time)
-    
+
     snmp_end_time = []
     for sns in snmp:
         time = sns[40:56]
@@ -520,7 +515,7 @@ def organize_data(day):
                 holl += " "
             else:
                 holl += letters
-    
+
         # 1 2 are months and 4 5 are days, 7 8 are hour 10 11 are minutes 13 14 are seconds
         time = holl
         #print(time)
@@ -535,7 +530,7 @@ def organize_data(day):
         time = elems[20:34]
         #print(elems[15:29])
         holl = ""
-    
+
         for letters in time:
             if letters == "_":
                 holl += " "
@@ -554,15 +549,15 @@ def organize_data(day):
         time = hold
         #print(time)
         compute2_time.append(time)
-    
-    
+
+
     compute2_end = []
     #print(compute2)
     for elems in compute2:
         time = elems[47:61]
         #print(elems[15:29])
         holl = ""
-    
+
         for letters in time:
             if letters == "_":
                 holl += " "
@@ -581,14 +576,14 @@ def organize_data(day):
         time = hold
         print(time)
         compute2_end.append(time)
-    
+
     now = datetime.now()
     start = now - timedelta(days=day) # datetime.timedelta(minutes=nmin)
 
     # for i in range(len(compute2_time)):
     if True:
 
-        
+
         compute_start = compute2_time[len(compute2_time)-1]
         compute_start += " 2023"
         compute_start_datetime_obj = datetime.strptime(compute_start, "%m %d %H %M %S %Y")
@@ -609,15 +604,15 @@ def organize_data(day):
             snmp_end += " 2023"
             print(snmp_end)
             snmp_end_datetime_obj = datetime.strptime(snmp_end, "%m %d %H %M %S %Y")
-            
+
             if (snmp_start_datetime_obj>=compute_start_datetime_obj and snmp_start_datetime_obj<=compute_end_datetime_obj) or (snmp_end_datetime_obj>=compute_start_datetime_obj and snmp_end_datetime_obj<=compute_end_datetime_obj):
             # if (snmp_start>=compute_start and snmp_end>=compute_end) or (snmp_start>=compute_start and snmp_end<=compute_end)
             # if (snmp_start<compute_end or snmp_start>compute_start) or (snmp_end>compute_start or snmp_end<compute_end):
                 subprocess.run(["cp", f"../../out/{snmp[j]}", "../../out/thefactory"])
                 subprocess.run(["cp", f"../../out/{compute2[len(compute2_time)-1]}", "../../out/thefactory"])
-        
+
     # columns_hunter.py  merger.py
-    subprocess.run(["python3", "../../out/thefactory/merger.py"]) 
+    subprocess.run(["python3", "../../out/thefactory/merger.py"])
     subprocess.run(["python3", "../../out/thefactory/columns_hunter.py"])
 
 # organize_data(1)
@@ -692,7 +687,7 @@ def return_mixed_part():
 
     else:
 
-        start = now - timedelta(microseconds=now.microsecond, minutes=1, seconds=now.second) + timedelta(seconds=30) 
+        start = now - timedelta(microseconds=now.microsecond, minutes=1, seconds=now.second) + timedelta(seconds=30)
         # datetime.timedelta(minutes=10)
 
         end = now - timedelta(microseconds=now.microsecond, seconds=now.second) # datetime.timedelta(minutes=10)
@@ -703,4 +698,3 @@ def return_mixed_part():
         nw = handleit(start, end, step, step_func, 0)
         # nw["end"] = end
         return nw # handleit(start, end, step, step_func, 0)
-
