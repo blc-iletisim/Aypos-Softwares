@@ -265,7 +265,7 @@ async def get_smooth_n_hour_data(nhour: int):
 @app.get('/prom/pm_mac_details')
 async def get_physical_mac_details():
     try:
-        res = rq.get("http://10.150.1.30:5001/get-pm-conf").json()
+        res = rq.get(f"{controller_api}/get-pm-conf").json()
 
         for i in res:
             res[i]['idle consumption'] = 114
@@ -280,7 +280,7 @@ async def get_physical_mac_details():
 
 @app.get('/prom/vm_mac_details')
 async def get_mac_details():
-    res = rq.get("http://10.150.1.30:5001/get-vm-conf").json()
+    res = rq.get(f"{controller_api}/get-vm-conf").json()
 
     res = res['result']
     for i in res:
@@ -291,7 +291,7 @@ async def get_mac_details():
 
 @app.get('/prom/monitoring')
 async def get_monitoring():
-    mon_conf = rq.get("http://10.150.1.30:5001/get-moni-conf").json()
+    mon_conf = rq.get(f"{controller_api}/get-moni-conf").json()
     return mon_conf
 
 
