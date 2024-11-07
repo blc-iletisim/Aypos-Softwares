@@ -8,24 +8,11 @@ from openstack import connection
 from novaclient import client
 import random
 import subprocess
+from openstack_configs import *
 
 
 command = "source /home/ubuntu/admin-openrc.sh && env"
 proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, executable="/bin/bash")
-
-os.environ['OS_AUTH_URL'] = "http://10.150.1.251:35357/v3"
-os.environ['OS_PROJECT_NAME'] = "admin"
-os.environ['OS_USERNAME'] = "admin"
-os.environ['OS_PASSWORD'] = "WHMFjzLBHf1N6FxPnZpCDsXYdXewgjsvwju385Mk"
-os.environ['OS_USER_DOMAIN_NAME'] = "Default"
-os.environ['OS_PROJECT_DOMAIN_NAME']= "Default"
-
-auth_url = os.environ['OS_AUTH_URL']
-project_name = os.environ['OS_PROJECT_NAME']
-username = os.environ['OS_USERNAME']
-password = os.environ['OS_PASSWORD']
-user_domain_name = os.environ['OS_USER_DOMAIN_NAME']
-project_domain_name = os.environ['OS_PROJECT_DOMAIN_NAME']
 
 # OpenStack ortamýna baðlantý oluþturun
 conn = connection.Connection(
