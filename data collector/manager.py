@@ -8,25 +8,28 @@ from culc_aypos_gain import *
 from DataHandler import *
 from data_saver import *
 
+controller_api = "http://10.150.1.30:5001"
+ansible_api = "http://172.18.15.79:8000"
+
 
 # time.sleep(90*60)
 def create_dist_vms(num):
-    res = requests.get(f"http://10.150.1.30:5001/create-vms/{num}")
+    res = requests.get(f"{controller_api}/create-vms/{num}")
     return res.status_code
 
 
 def delete_vms(num):
-    res = requests.get(f"http://10.150.1.30:5001/delete-vms/{num}")
+    res = requests.get(f"{controller_api}/delete-vms/{num}")
     return res.status_code
 
 
 def remove_known_hosts():
-    res = requests.get("http://172.18.15.79:8000/remove_known")
+    res = requests.get(f"{ansible_api}/remove_known")
     return res.status_code
 
 
 def start_ansible(num):
-    res = requests.get(f"http://172.18.15.79:8000/start_ansible/{num}")
+    res = requests.get(f"{ansible_api}/start_ansible/{num}")
     return res.status_code
 
 
@@ -43,7 +46,7 @@ def migrate(vm, host):
     header = {"X-Auth-Key": api_key}
     mig_req = {"vm_name": vm, "to_host": host}
 
-    resp = requests.post("http://10.150.1.30:5001/migrate", json=str(mig_req), headers=header)
+    resp = requests.post("{controller_api}/migrate", json=str(mig_req), headers=header)
     # print(resp.text)
     print(resp.status_code)
     print(resp.json())
