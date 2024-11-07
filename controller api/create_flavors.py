@@ -6,13 +6,8 @@ from keystoneauth1.session import Session
 import openstack
 from openstack import connection
 import random
+from openstack_configs import *
 
-auth_url = os.environ['OS_AUTH_URL']
-project_name = os.environ['OS_PROJECT_NAME']
-username = os.environ['OS_USERNAME']
-password = os.environ['OS_PASSWORD']
-user_domain_name = os.environ['OS_USER_DOMAIN_NAME']
-project_domain_name = os.environ['OS_PROJECT_DOMAIN_NAME']
 
 # OpenStack ortamýna baðlantý oluþturun
 conn = connection.Connection(
