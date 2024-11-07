@@ -6,18 +6,12 @@ from keystoneauth1.session import Session
 import requests as rq
 from openstack import connection
 from flask import Flask, jsonify, request
+from openstack_configs import *
 
 
 app = Flask(__name__)
 
 API_KEY = "4QGEF_nKKnmyrsQyh3wqvvqOfgZO5pfrPTBPKi8uXFI="  # Replace with your actual API key
-
-auth_url = "http://10.150.1.251:35357/v3"
-project_name = "admin"
-username = "admin"
-password = "WHMFjzLBHf1N6FxPnZpCDsXYdXewgjsvwju385Mk"
-user_domain_name = "Default"
-project_domain_name ="Default"
 
 # OpenStack ortamýna baðlantý oluþturun
 conn = connection.Connection(
