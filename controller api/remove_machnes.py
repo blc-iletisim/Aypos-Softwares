@@ -3,18 +3,11 @@ import requests
 from keystoneauth1.identity import v3
 from keystoneauth1.session import Session
 import inspect
-
+from openstack_configs import *
 import openstack
 from openstack import connection
 from novaclient import client
 import random
-
-auth_url = os.environ['OS_AUTH_URL']
-project_name = os.environ['OS_PROJECT_NAME']
-username = os.environ['OS_USERNAME']
-password = os.environ['OS_PASSWORD']
-user_domain_name = os.environ['OS_USER_DOMAIN_NAME']
-project_domain_name = os.environ['OS_PROJECT_DOMAIN_NAME']
 
 # OpenStack ortamýna baðlantý oluþturun
 conn = connection.Connection(
