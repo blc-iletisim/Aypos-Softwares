@@ -1,0 +1,17 @@
+[node_exporter]
+192.168.57.84
+192.168.57.133
+192.168.57.171
+192.168.57.145
+192.168.57.218
+192.168.57.68
+192.168.57.235
+192.168.57.37
+192.168.57.226
+192.168.57.103
+192.168.57.134
+
+[node_exporter:vars]
+ansible_password=blc123
+ansible_ssh_user=ubuntu
+host_key_checking=False
