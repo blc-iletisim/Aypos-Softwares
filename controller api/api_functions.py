@@ -237,7 +237,7 @@ def get_pm_conf():
     # Source the admin-openrc.sh file and capture the environment variables
     command = "source /home/ubuntu/admin-openrc.sh && env"
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, executable="/bin/bash")
-    define_envs()
+    define_environmentals()
 
     env_vars = {}
     for line in proc.stdout:
