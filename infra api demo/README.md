@@ -1,7 +1,7 @@
-install ansible
-$ sudo apt update
-$ sudo apt install software-properties-common
-$ sudo add-apt-repository --yes --update ppa:ansible/ansible
-$ sudo apt install ansible
+install ansible <br>
+$ sudo apt update <br>
+$ sudo apt install software-properties-common <br>
+$ sudo add-apt-repository --yes --update ppa:ansible/ansible <br>
+$ sudo apt install ansible <br> <br>
 
-then deploy using ansible_installer.py
+then deploy using ansible_run.py
