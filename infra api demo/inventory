@@ -9,7 +9,6 @@
 192.168.57.37
 192.168.57.226
 192.168.57.103
-192.168.57.134
 
 [node_exporter:vars]
 ansible_password=blc123
