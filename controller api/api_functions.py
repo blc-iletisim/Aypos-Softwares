@@ -1,4 +1,4 @@
-
+from environmentals import *
 import re, subprocess
 import os, subprocess, inspect, openstack, requests
 from keystoneauth1.identity import v3
@@ -11,7 +11,7 @@ from openstack_configs import *
 
 app = Flask(__name__)
 
-API_KEY = "4QGEF_nKKnmyrsQyh3wqvvqOfgZO5pfrPTBPKi8uXFI="  # Replace with your actual API key
+API_KEY = "4QGEF_nKKnmyrsQyh3wqvvqOfgZO5pfrPTBPKi8uXFI="
 
 # OpenStack ortamýna baðlantý oluþturun
 conn = connection.Connection(
@@ -237,18 +237,7 @@ def get_pm_conf():
     # Source the admin-openrc.sh file and capture the environment variables
     command = "source /home/ubuntu/admin-openrc.sh && env"
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, executable="/bin/bash")
-    os.environ["OS_USER_DOMAIN_NAME"] = "Default"
-    os.environ["OS_PROJECT_NAME"] = "admin"
-    os.environ["OS_TENANT_NAME"] = "admin"
-    os.environ["OS_USERNAME"] = "admin"
-    os.environ["OS_PASSWORD"] = "WHMFjzLBHf1N6FxPnZpCDsXYdXewgjsvwju385Mk"
-    os.environ["OS_AUTH_URL"] = "http://10.150.1.251:35357/v3"
-    os.environ["OS_INTERFACE"] = "internal"
-    os.environ["OS_ENDPOINT_TYPE"] = "internalURL"
-    os.environ["OS_IDENTITY_API_VERSION"] = "3"
-    os.environ["OS_REGION_NAME"] = "RegionOne"
-    os.environ["OS_AUTH_PLUGIN"]="password"
-    os.environ["OS_PROJECT_DOMAIN_NAME"] = "Default"
+    define_envs()
 
     env_vars = {}
     for line in proc.stdout:
