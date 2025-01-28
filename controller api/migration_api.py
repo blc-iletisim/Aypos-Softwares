@@ -15,7 +15,7 @@ def stressss():
 
     conn.compute.wait_for_server(server)
 
-    addrs = server.addresses['Internal'][1]['addr']
+    addrs = server.addresses[network_name][ip_number]['addr']
     stat = run_bash_script_on_vm(addrs, bash_script, pem_key_path)
     return jsonify({"stat": stat})
 
@@ -52,9 +52,9 @@ def migrate_server():
         
         conn.compute.wait_for_server(server)
         
-        addrs = server.addresses['Internal'][1]['addr']
+        # addrs = server.addresses[network_name][which_ip]['addr']
         # rq.get("http://10.150.1.111:5001/start-stress", json=str({"server_ip": addrs}))    
-        stat = run_bash_script_on_vm(addrs, bash_script, pem_key_path)
+        # stat = run_bash_script_on_vm(addrs, bash_script, pem_key_path)
 
         return jsonify({"status": stat, "status_code": 0, })
 
@@ -91,7 +91,7 @@ def stop_servers():
 
     vms = get_virtual_machines()
     for server_object in vms:
-        if server_object.status == 'ACTIVE' and server_object.name != 'prometheus_serverV3':
+        if server_object.status == 'ACTIVE' and server_object.name != prometheus_vm_openstack_name:
             print(server_object)
             conn.compute.stop_server(server_object)
             vm_names.append(server_object.name)
@@ -110,6 +110,14 @@ def get_vm_conf_api():
 def get_pm_conf_api():
 
     conf = get_pm_conf()
+    print(conf)
+    return jsonify(conf)
+
+
+@app.route('/get-all-pm-conf', methods=['GET'])
+def get_pm_conf_api():
+
+    conf = get_pm_conf(get_all=True)
     print(conf)
     return jsonify(conf)
 
@@ -142,6 +150,12 @@ def create_instances():
     return jsonify({"ips": ips})
 
 
+@app.route('/get-all-vm-details', methods=['GET'])
+def create_instances():
+    details = get_all_vm_details()
+    return jsonify({"details": details})
+
+
 if __name__ == '__main__':
-    app.run(port=5001, host='0.0.0.0', debug=False)
+    app.run(port=flask_port, host=flask_host, debug=False)
 
