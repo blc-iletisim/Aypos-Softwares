@@ -9,21 +9,12 @@ from novaclient import client
 import random
 import subprocess
 from openstack_configs import *
+from configs import *
 
 
-command = "source /home/ubuntu/admin-openrc.sh && env"
+command = f"source {openrc_loc} && env"
 proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, executable="/bin/bash")
 
-# OpenStack ortamýna baðlantý oluþturun
-conn = connection.Connection(
-    auth_url=auth_url,
-    project_name=project_name,
-    username=username,
-    password=password,
-    user_domain_name=user_domain_name,
-    project_domain_name=project_domain_name,
-
-)
 
 import re, subprocess
 
@@ -52,7 +43,7 @@ def delete_vms(number):
         server = conn.compute.delete_server(server)
 
 
-command = "source /home/ubuntu/admin-openrc.sh && env"
+command = f"source {openrc_loc} && env"
 proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, executable="/bin/bash")
 
 if __name__=='__main__':
