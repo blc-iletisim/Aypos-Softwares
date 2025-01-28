@@ -1,29 +1,19 @@
 import os
 import requests
-from keystoneauth1.identity import v3
-from keystoneauth1.session import Session
+# from keystoneauth1.identity import v3
+# from keystoneauth1.session import Session
 import inspect
 import openstack
-from openstack import connection
-from novaclient import client
+# from openstack import connection
+# from novaclient import client
+
 import random
 import subprocess
 from openstack_configs import *
+from configs import *
 
-
-command = "source /home/ubuntu/admin-openrc.sh && env"
+command = f"source {openrc_loc} && env"
 proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, executable="/bin/bash")
-
-# OpenStack ortamýna baðlantý oluþturun
-conn = connection.Connection(
-    auth_url=auth_url,
-    project_name=project_name,
-    username=username,
-    password=password,
-    user_domain_name=user_domain_name,
-    project_domain_name=project_domain_name,
-
-)
 
 import re, subprocess
 
@@ -43,13 +33,12 @@ def get_floating_ips():
   return matches
 
 
-
 def create_random_vms(number):
     
     floating_ips = get_floating_ips()
     allocated_ips = []
 
-    network = conn.network.find_network("Internal")
+    network = conn.network.find_network(network_name)
 
     for i in range(number):
         
@@ -63,7 +52,14 @@ def create_random_vms(number):
 
         name_mac = 'aypos_tester' + str(i)
 
-        server = conn.compute.create_server(name=name_mac, flavorRef=flavor.id,image_id="20944105-1877-4935-bacd-d68dc3691ade",networks=[{"uuid": network.id}],key_name="ayposKeypair")
+        # give password below
+        if use_pem:
+            server = conn.compute.create_server(name=name_mac, flavorRef=flavor.id, image_id=image_id,
+                                                networks=[{"uuid": network.id}], key_name=pem_file_name)
+
+        else:
+            server = conn.compute.create_server(name=name_mac, flavorRef=flavor.id,image_id=image_id,
+                                                networks=[{"uuid": network.id}], adminPass=password)
 
         conn.compute.wait_for_server(server)
         # server.add_floating_ip_to_server(floating_ips[0])
@@ -78,7 +74,7 @@ def create_random_vms(number):
     return allocated_ips
 
 
-command = "source /home/ubuntu/admin-openrc.sh && env"
+command = f"source {openrc_loc} && env"
 proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, executable="/bin/bash")
 
 # ips_allocated = create_random_vms()
