@@ -1,32 +1,17 @@
+from google.ai.generativelanguage_v1beta import Hyperparameters
+
 from environmentals import *
 import re, subprocess
 import os, subprocess, inspect, openstack, requests
 from keystoneauth1.identity import v3
 from keystoneauth1.session import Session
 import requests as rq
-from openstack import connection
+
 from flask import Flask, jsonify, request
-from openstack_configs import *
+from configs import *
 
 
 app = Flask(__name__)
-
-API_KEY = "4QGEF_nKKnmyrsQyh3wqvvqOfgZO5pfrPTBPKi8uXFI="
-
-# OpenStack ortamýna baðlantý oluþturun
-conn = connection.Connection(
-    auth_url=auth_url,
-    project_name=project_name,
-    username=username,
-    password=password,
-    user_domain_name=user_domain_name,
-    project_domain_name=project_domain_name,
-    )
-
-# Example usage:
-vm_ip = "10.150.1.130"
-bash_script = "/home/ubuntu/randomStressor.sh"
-pem_key_path = "/home/ubuntu/ayposKeypair.pem"
 
 
 def get_virtual_machines():
@@ -103,8 +88,6 @@ def get_vm_conf():
         print(instances)
         return instances
 
-
-
     def get_vm_by_id(vm_id):
 
         compute_service = conn.compute
@@ -113,18 +96,20 @@ def get_vm_conf():
 
             flav = vm.flavor.copy()
 
-            flav["host"] = vm.compute_host
+            if not use_zone:
+                flav["host"] = vm.compute_host
+            else:
+                flav["host"] = vm.location["zone"] # vm.zone
             #flav['compute_host'] = vm.compute_host
             asd = vm.addresses.copy()
 
-            flav["ip"] = asd["Internal"][1]["addr"]
+            flav["ip"] = asd[network_name][ip_number]["addr"]
 
             return vm.name, flav
 
         except Exception as e:
             print(f"Error retrieving VM with ID {vm_id}: {e}")
             return None, None
-
 
     def get_flavors():
 
@@ -158,7 +143,6 @@ def get_monitoring_con():
         
         return instances
 
-
     def get_vm_by_id(vm_id):
 
         compute_service = conn.compute
@@ -169,7 +153,6 @@ def get_monitoring_con():
         except Exception as e:
             print(f"Error retrieving VM with ID {vm_id}: {e}")
             return None
-
 
     def get_flavors():
 
@@ -195,7 +178,7 @@ def get_monitoring_con():
     return get_flavors()
 
 
-def get_pm_conf():
+def get_pm_conf(get_all=False):
     # session need sourcing
     def get_host_list(env_vars):
         # Run the openstack command with the captured environment variables
@@ -235,7 +218,7 @@ def get_pm_conf():
         return data
 
     # Source the admin-openrc.sh file and capture the environment variables
-    command = "source /home/ubuntu/admin-openrc.sh && env"
+    command = f"source {openrc_loc} && env"
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, executable="/bin/bash")
     define_environmentals()
 
@@ -246,7 +229,13 @@ def get_pm_conf():
     proc.communicate()
 
     print_data = {}
-    for i in get_host_list(env_vars):
+
+    if limit_computes and not get_all:
+        hypervisor_indexes = compute_indexes
+    else:
+        hypervisor_indexes = get_host_list(env_vars)
+
+    for i in hypervisor_indexes:
         print(i)
 
         details = get_host_details(i, env_vars)
@@ -256,7 +245,6 @@ def get_pm_conf():
             print_data[details["hypervisor_hostname"]] = details
 
     return print_data
-
 
 
 def get_virtual_machines():
@@ -280,13 +268,12 @@ def get_floating_ips():
   return matches
 
 
-
 def create_random_vms():
 
     floating_ips = get_floating_ips()
     allocated_ips = []
 
-    network = conn.network.find_network("Internal")
+    network = conn.network.find_network(network_name)
 
     for i in range(20):
 
@@ -300,7 +287,14 @@ def create_random_vms():
 
         name_mac = 'aypos_tester' + str(i)
 
-        server = conn.compute.create_server(name=name_mac, flavorRef=flavor.id,image_id="20944105-1877-4935-bacd-d68dc3691ade",networks=[{"uuid": network.id}],key_name="ayposKeypair")
+        # give password below
+        if use_pem:
+            server = conn.compute.create_server(name=name_mac, flavorRef=flavor.id, image_id=image_id,
+                                                networks=[{"uuid": network.id}], key_name=pem_file_name)
+
+        else:
+            server = conn.compute.create_server(name=name_mac, flavorRef=flavor.id, image_id=image_id,
+                                                networks=[{"uuid": network.id}], adminPass=password)
 
         conn.compute.wait_for_server(server)
         # server.add_floating_ip_to_server(floating_ips[0])
@@ -314,3 +308,56 @@ def create_random_vms():
 
     return allocated_ips
 
+
+def get_all_vm_details():
+    # Sanal makineler (örnekler) hakkýnda bilgi alýn
+    def get_virtual_machines():
+        compute_service = conn.compute
+        instances = compute_service.servers()
+        print(instances)
+        return instances
+
+    def get_vm_by_id(vm_id):
+
+        compute_service = conn.compute
+        try:
+            vm = compute_service.get_server(vm_id)
+
+            flav = vm.flavor.copy()
+
+            if not use_zone:
+                flav["host"] = vm.compute_host
+            else:
+                flav["host"] = vm.location["zone"]  # vm.zone
+            # flav['compute_host'] = vm.compute_host
+            asd = vm.addresses.copy()
+
+            flav["ip"] = asd[network_name][ip_number]["addr"]
+
+            return vm.name, flav
+
+        except Exception as e:
+            print(f"Error retrieving VM with ID {vm_id}: {e}")
+            return None, None
+
+    def get_flavors():
+
+        data = {}
+        virtual_machines = get_virtual_machines()
+
+        for vm in virtual_machines:
+
+            if not vm:
+                continue
+
+            print(vm)
+            name, flavor = get_vm_by_id(vm.id)
+
+            if not name:
+                continue
+
+            data[name] = str(vm)
+
+        return {"result": data}
+
+    return get_flavors()
